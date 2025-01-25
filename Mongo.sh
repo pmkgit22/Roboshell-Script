@@ -1,7 +1,7 @@
 #!/bin/bash
 USERID=$(id -u )
 DATE=$(date +%F)
-LOGDIR=/home/centos/shellscript-logs
+LOGDIR=/tmp
 SCRIPT_NAME=$0
 LOGFILE=$LOGDIR/$0-$DATE.log
 R="\e[31m"
@@ -25,5 +25,21 @@ Validate(){
   else
   echo -e "$B $2 succesfully installed$N"
 fi
-
 }
+cp mongo.repo /etc/yum.repos.d/mongo.repo &>>$LOGFILE
+Validate $? " copied mongo.repo in to your repos folder"
+
+yum install mongodb-org -y &>>$LOGFILE
+Validate $? " installing mongo db"
+systemctl enable mongod &>>$LOGFILE
+Validate $? " enabling mongoDB"
+systemctl start mongod &>>$LOGFILE
+Validate $? " starting mongo DB"
+
+#vim /etc/mongod.conf
+
+sed -i 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf &>>$LOGFILE
+Validate $? "Edited mongo conf File"
+
+systemctl restart mongod &>>$LOGFILE
+Validate $? "Restart mongo DB"
