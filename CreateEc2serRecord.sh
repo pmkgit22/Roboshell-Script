@@ -18,7 +18,7 @@ SUBNET_ID=subnet-054782327410188eb
 
 for i in $@
 do
-    if [[ $i == "mongodb" || $i == "mysql"]]
+    if [[ $i == "mongodb" || $i == "mysql" ]]
     then
         INSTANCE_TYPE="t3.medium"
     else
