@@ -5,44 +5,34 @@ IMAGE_ID=ami-0b4f379183e5706b9
 SECURITY_GROUP_ID=sg-0aa5eadb45a5e2e7b
 DOMAIN_NAME=munidevops.shop
 HOSTED_ZONE_ID=Z06548701E94N6E056HLX
-#USERID=$(id -u )
-#DATE=$(date +%F)
-#LOGDIR=/home/centos/shellscript-logs
-#SUBNET_ID=subnet-054782327410188eb
-# SCRIPT_NAME=$0
-# LOGFILE=$LOGDIR/$0-$DATE.log
-# R="\e[31m"
-# N="\e[0m"
-# B="\e[34m"
-# (IF mysql or mongodb instance type is t3.medium otherwise t2.medium)
-#--subnet-id $SUBNET_ID --query "Instances[0].InstanceId" --output text
+SUBNET_ID=subnet-054782327410188eb
 
 for i in $@
 do
-    if [[ $i == "mongodb" || $i == "mysql" ]]
-    then
+    if [[ $i == "mongodb" || $i == "mysql" ]]; then
         INSTANCE_TYPE="t3.medium"
     else
         INSTANCE_TYPE="t2.micro" 
     fi
     echo "creating $i instance "
-    IP_ADDRESS=$(aws ec2 run-instances --imageid $IMAGE_ID --instance-type $INSTANCE_TYPE --security-group-ids $SECURITY_GROUP_ID )
+    INSTANCE_ID=$(aws ec2 run-instances --image-id $IMAGE_ID --instance-type $INSTANCE_TYPE --security-group-ids $SECURITY_GROUP_ID --subnet-id $SUBNET_ID --query "Instances[0].InstanceId" --output text)
     
-    echo "created  $i instance : $IP_ADDRESS "
-    aws route53 changes-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '
+    echo "created $i instance : $INSTANCE_ID "
+    
+    # NOTE: The above command returns an instance ID, not the public IP address.
+    # If you want to point your DNS to the instance's public IP, you'll need to retrieve it after the instance is running.
+
+    aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '
     {
-                "changes":[{
-                "Action": "CREATE",
-                            "ResourceRecordSet": {
-                                "Name": "'$i.$DOMAIN_NAME'",
-                                "Type": "A",
-                                "TTL": 300,
-                                "ResourceRecords": [{ "Value": "'$IP_ADDRESS'" }]
-
-                            }
-                }]
-
-
+        "Changes": [{
+            "Action": "CREATE",
+            "ResourceRecordSet": {
+                "Name": "'$i.$DOMAIN_NAME'",
+                "Type": "A",
+                "TTL": 300,
+                "ResourceRecords": [{ "Value": "'$INSTANCE_ID'" }]
+            }
+        }]
     }
     '
 done
