@@ -8,13 +8,14 @@ HOSTED_ZONE_ID=Z06548701E94N6E056HLX
 #USERID=$(id -u )
 #DATE=$(date +%F)
 #LOGDIR=/home/centos/shellscript-logs
-SUBNET_ID=subnet-054782327410188eb
+#SUBNET_ID=subnet-054782327410188eb
 # SCRIPT_NAME=$0
 # LOGFILE=$LOGDIR/$0-$DATE.log
 # R="\e[31m"
 # N="\e[0m"
 # B="\e[34m"
 # (IF mysql or mongodb instance type is t3.medium otherwise t2.medium)
+#--subnet-id $SUBNET_ID --query "Instances[0].InstanceId" --output text
 
 for i in $@
 do
@@ -25,7 +26,7 @@ do
         INSTANCE_TYPE="t2.micro" 
     fi
     echo "creating $i instance "
-    IP_ADDRESS=$(aws ec2 run-instances --imageid $IMAGE_ID --instance-type $INSTANCE_TYPE --security-group-ids $SECURITY_GROUP_ID --subnet-id $SUBNET_ID --query "Instances[0].InstanceId" --output text)
+    IP_ADDRESS=$(aws ec2 run-instances --imageid $IMAGE_ID --instance-type $INSTANCE_TYPE --security-group-ids $SECURITY_GROUP_ID )
     
     echo "created  $i instance : $IP_ADDRESS "
     aws route53 changes-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '
