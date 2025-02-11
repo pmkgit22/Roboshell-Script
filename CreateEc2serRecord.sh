@@ -16,14 +16,24 @@ do
     fi
 
     echo "creating $i instance"
-    INSTANCE_ID=$(aws ec2 run-instances --image-id $IMAGE_ID --instance-type $INSTANCE_TYPE --security-group-ids $SECURITY_GROUP_ID --subnet-id $SUBNET_ID --query "Instances[0].InstanceId" --output text)
+    INSTANCE_ID=$(aws ec2 run-instances \
+        --image-id $IMAGE_ID \
+        --instance-type $INSTANCE_TYPE \
+        --security-group-ids $SECURITY_GROUP_ID \
+        --subnet-id $SUBNET_ID \
+        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$i}]" \
+        --query "Instances[0].InstanceId" \
+        --output text)
     echo "created $i instance: $INSTANCE_ID"
 
     # Wait for the instance to be running
     aws ec2 wait instance-running --instance-ids $INSTANCE_ID
 
     # Retrieve the public IP address of the instance
-    PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+    PUBLIC_IP=$(aws ec2 describe-instances \
+        --instance-ids $INSTANCE_ID \
+        --query "Reservations[0].Instances[0].PublicIpAddress" \
+        --output text)
     echo "Public IP for instance $INSTANCE_ID is: $PUBLIC_IP"
 
     # Create the Route 53 DNS record using the public IP address
@@ -41,5 +51,7 @@ do
 }
 EOF
 
-    aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch "$CHANGE_BATCH"
+    aws route53 change-resource-record-sets \
+        --hosted-zone-id $HOSTED_ZONE_ID \
+        --change-batch "$CHANGE_BATCH"
 done
